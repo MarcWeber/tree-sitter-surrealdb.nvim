@@ -1,62 +1,51 @@
-local function setup()
-	vim.filetype.add({
-	    extension = {
-	        surql = "surql",
-	        surrealql = "surql"
-	    }
-	});
+local M = {}
 
-	local parser_config = require("nvim-treesitter.parsers").get_parser_configs()
-	parser_config.surrealdb = {
-		install_info = {
-			url = "https://github.com/DariusCorvus/tree-sitter-surrealdb.git",
-			files = { "src/parser.c" },
-			branch = "main",
-		},
-		filetype = "surql",
-	}
+function M.setup()
+    local parsers = require("nvim-treesitter.parsers")
+    local parser_config = parsers.get_parser_configs and parsers.get_parser_configs() or parsers.list
 
-	local highlights_scm = [[
-	(keyword) @keyword
-	(string) @string
-	(number) @number
-	(punctuation) @punctuation
-	(operator) @operator
-	(variable) @type
-	(constant) @constant.builtin
-	(function) @function
-	(bool) @boolean
-	(nothing) @type
-	(comment) @comment
-	(record) @type
-	(function) @function
-	(property) @field
-	(identifier) @text.emphasis
-	(casting) @conceal
-	(duration) @number
-	(type) @type
-	(delimiter) @punctuation.delimiter
-	]]
+    parser_config.surrealdb = {
+        install_info = {
+            url = "https://github.com/DariusCorvus/tree-sitter-surrealdb",
+            files = { "src/parser.c" },
+            branch = "main",
+        },
+        filetype = "surql",
+    }
 
-	local injections_scm = [[
-	(scripting_content) @javascript
-	]]
+    vim.filetype.add({
+        extension = {
+            surql = "surql",
+            surrealdb = "surql",
+        },
+    })
 
-	local runtime_path = vim.fn.stdpath("cache")
-	vim.opt.runtimepath:append(runtime_path)
-	vim.fn.mkdir(runtime_path .. "/queries/surrealdb", "p")
+    -- Define the highlight queries
+    local highlights_scm = [[
+(keyword) @keyword
+(string) @string
+(number) @number
+(punctuation) @punctuation
+(operator) @operator
+(variable) @variable
+(constant) @constant.builtin
+(function) @function
+(bool) @boolean
+(comment) @comment
+(type) @type
+    ]]
 
-	if vim.fn.isdirectory(runtime_path .. "/queries/surrealdb") == 1 then
-		local highlights_file = io.open(runtime_path .. "/queries/surrealdb/highlights.scm", "w")
-		io.output(highlights_file)
-		io.write(highlights_scm)
-		io.close(highlights_file)
+    -- Create the query file in the nvim config directory
+    local query_path = vim.fn.stdpath("config") .. "/queries/surrealdb"
+    if vim.fn.isdirectory(query_path) == 0 then
+        vim.fn.mkdir(query_path, "p")
+    end
 
-		local injections_file = io.open(runtime_path .. "/queries/surrealdb/injections.scm", "w")
-		io.output(injections_file)
-		io.write(injections_scm)
-		io.close(injections_file)
-	end
+    local f = io.open(query_path .. "/highlights.scm", "w")
+    if f then
+        f:write(highlights_scm)
+        f:close()
+    end
 end
 
-return { setup = setup }
+return M
